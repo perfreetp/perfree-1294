@@ -1,6 +1,6 @@
 [
   {
-    "timestamp": "20260612_014045_511675",
+    "timestamp": "20260612_020041_288789",
     "command": "check",
     "args": {
       "input": "E:\\trae-bz\\TraeProjects\\1294\\examples\\上海分公司_花名册.xlsx",
@@ -12,13 +12,29 @@
       {
         "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\校验结果_上海.xlsx",
         "action": "overwrite",
-        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_511675\\校验结果_上海.xlsx.bak"
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_288789\\校验结果_上海.xlsx.bak"
       }
     ],
-    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_511675"
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_288789",
+    "operator": "张三",
+    "batch_id": "B20260612-TEST01",
+    "input_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\上海分公司_花名册.xlsx",
+        "digest": "sha256:dcaf88e11cf9209b",
+        "size": 8135
+      }
+    ],
+    "output_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\校验结果_上海.xlsx",
+        "digest": "sha256:bbe21023ddf790a0",
+        "size": 5459
+      }
+    ]
   },
   {
-    "timestamp": "20260612_014045_536481",
+    "timestamp": "20260612_020041_347250",
     "command": "check",
     "args": {
       "input": "E:\\trae-bz\\TraeProjects\\1294\\examples\\北京分公司_花名册.xlsx",
@@ -30,13 +46,29 @@
       {
         "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\校验结果_北京.xlsx",
         "action": "overwrite",
-        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_536481\\校验结果_北京.xlsx.bak"
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_347250\\校验结果_北京.xlsx.bak"
       }
     ],
-    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_536481"
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_347250",
+    "operator": "张三",
+    "batch_id": "B20260612-TEST01",
+    "input_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\北京分公司_花名册.xlsx",
+        "digest": "sha256:1335723e5ca0d2cd",
+        "size": 7454
+      }
+    ],
+    "output_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\校验结果_北京.xlsx",
+        "digest": "sha256:57898c48ccc06132",
+        "size": 5071
+      }
+    ]
   },
   {
-    "timestamp": "20260612_014045_564082",
+    "timestamp": "20260612_020041_396122",
     "command": "check",
     "args": {
       "input": "E:\\trae-bz\\TraeProjects\\1294\\examples\\深圳分公司_花名册.csv",
@@ -48,13 +80,29 @@
       {
         "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\校验结果_深圳.xlsx",
         "action": "overwrite",
-        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_564082\\校验结果_深圳.xlsx.bak"
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_396122\\校验结果_深圳.xlsx.bak"
       }
     ],
-    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_564082"
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_396122",
+    "operator": "张三",
+    "batch_id": "B20260612-TEST01",
+    "input_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\深圳分公司_花名册.csv",
+        "digest": "sha256:a03eabdd6d6acbcc",
+        "size": 2043
+      }
+    ],
+    "output_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\校验结果_深圳.xlsx",
+        "digest": "sha256:57898c48ccc06132",
+        "size": 5071
+      }
+    ]
   },
   {
-    "timestamp": "20260612_014045_645469",
+    "timestamp": "20260612_020041_474955",
     "command": "merge",
     "args": {
       "inputs": [
@@ -69,13 +117,39 @@
       {
         "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2.xlsx",
         "action": "overwrite",
-        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_645469\\集团花名册_Q2.xlsx.bak"
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_474955\\集团花名册_Q2.xlsx.bak"
       }
     ],
-    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_645469"
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_474955",
+    "operator": "张三",
+    "batch_id": "B20260612-TEST01",
+    "input_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\上海分公司_花名册.xlsx",
+        "digest": "sha256:dcaf88e11cf9209b",
+        "size": 8135
+      },
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\北京分公司_花名册.xlsx",
+        "digest": "sha256:1335723e5ca0d2cd",
+        "size": 7454
+      },
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\深圳分公司_花名册.csv",
+        "digest": "sha256:a03eabdd6d6acbcc",
+        "size": 2043
+      }
+    ],
+    "output_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2.xlsx",
+        "digest": "sha256:9d840e80a33d1b79",
+        "size": 11356
+      }
+    ]
   },
   {
-    "timestamp": "20260612_014045_746359",
+    "timestamp": "20260612_020041_585137",
     "command": "compare",
     "args": {
       "old": "E:\\trae-bz\\TraeProjects\\1294\\examples\\Q1_花名册.xlsx",
@@ -86,37 +160,74 @@
     "files": [
       {
         "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\Q1_Q2对比结果.xlsx",
-        "action": "create",
-        "backup": null
+        "action": "overwrite",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_585137\\Q1_Q2对比结果.xlsx.bak"
       }
     ],
-    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_746359"
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_585137",
+    "operator": "张三",
+    "batch_id": "B20260612-TEST01",
+    "input_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\Q1_花名册.xlsx",
+        "digest": "sha256:b2c4faecaf7fee69",
+        "size": 9520
+      },
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2.xlsx",
+        "digest": "sha256:9d840e80a33d1b79",
+        "size": 11356
+      }
+    ],
+    "output_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\Q1_Q2对比结果.xlsx",
+        "digest": "sha256:c7eb26cc53bf64dc",
+        "size": 15191
+      }
+    ]
   },
   {
-    "timestamp": "20260612_014045_806150",
+    "timestamp": "20260612_020041_659085",
     "command": "mask",
     "args": {
       "input": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2.xlsx",
       "output": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2_脱敏.xlsx",
       "fields": [
-        "手机号",
+        "紧急联系电话",
         "薪资",
-        "身份证号",
         "银行卡号",
-        "紧急联系电话"
+        "身份证号",
+        "手机号"
       ]
     },
     "files": [
       {
         "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2_脱敏.xlsx",
         "action": "overwrite",
-        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_806150\\集团花名册_Q2_脱敏.xlsx.bak"
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_659085\\集团花名册_Q2_脱敏.xlsx.bak"
       }
     ],
-    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_806150"
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_659085",
+    "operator": "张三",
+    "batch_id": "B20260612-TEST01",
+    "input_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2.xlsx",
+        "digest": "sha256:9d840e80a33d1b79",
+        "size": 11356
+      }
+    ],
+    "output_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2_脱敏.xlsx",
+        "digest": "sha256:570324bf5211c42a",
+        "size": 10718
+      }
+    ]
   },
   {
-    "timestamp": "20260612_014045_997684",
+    "timestamp": "20260612_020041_934397",
     "command": "report",
     "args": {
       "input": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2.xlsx",
@@ -131,18 +242,39 @@
       {
         "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\上海总部_Q2明细.xlsx",
         "action": "overwrite",
-        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_997684\\上海总部_Q2明细.xlsx.bak"
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_934397\\上海总部_Q2明细.xlsx.bak"
       },
       {
         "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团统计_Q2.xlsx",
         "action": "overwrite",
-        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_997684\\集团统计_Q2.xlsx.bak"
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_934397\\集团统计_Q2.xlsx.bak"
       }
     ],
-    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014045_997684"
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020041_934397",
+    "operator": "张三",
+    "batch_id": "B20260612-TEST01",
+    "input_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2.xlsx",
+        "digest": "sha256:9d840e80a33d1b79",
+        "size": 11356
+      }
+    ],
+    "output_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\上海总部_Q2明细.xlsx",
+        "digest": "sha256:49bb5b0e659c08e9",
+        "size": 6834
+      },
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团统计_Q2.xlsx",
+        "digest": "sha256:84cc3dc307d4d02e",
+        "size": 15229
+      }
+    ]
   },
   {
-    "timestamp": "20260612_014046_056424",
+    "timestamp": "20260612_020042_013318",
     "command": "batch",
     "args": {
       "plan": "E:\\trae-bz\\TraeProjects\\1294\\examples\\batch_plan.yaml",
@@ -150,15 +282,233 @@
       "steps": 7,
       "success": 6,
       "failed": 0,
-      "duration": 0.762
+      "duration": 1.037,
+      "batch_id": "B20260612-TEST01",
+      "skipped_resume": 0
     },
     "files": [
       {
         "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\batch_report.xlsx",
         "action": "overwrite",
-        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014046_056424\\batch_report.xlsx.bak"
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020042_013318\\batch_report.xlsx.bak"
       }
     ],
-    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_014046_056424"
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020042_013318",
+    "operator": "张三",
+    "batch_id": "B20260612-TEST01",
+    "input_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\batch_plan.yaml",
+        "digest": "sha256:047044d173a6ddbf",
+        "size": 1765
+      }
+    ],
+    "output_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\batch_report.xlsx",
+        "digest": "sha256:5f9dd2e819caa6b2",
+        "size": 8138
+      }
+    ]
+  },
+  {
+    "timestamp": "20260612_020137_298709",
+    "command": "report",
+    "args": {
+      "input": "E:\\trae-bz\\TraeProjects\\1294\\examples\\合并花名册.xlsx",
+      "filters": [],
+      "group_by": null,
+      "per_branch": true,
+      "branch_field": "分公司",
+      "branch_dir": "E:\\trae-bz\\TraeProjects\\1294\\examples\\branch_reports"
+    },
+    "files": [
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\branch_reports\\上海总部_统计.xlsx",
+        "action": "overwrite",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020137_298709\\上海总部_统计.xlsx.bak"
+      },
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\branch_reports\\北京分公司_统计.xlsx",
+        "action": "overwrite",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020137_298709\\北京分公司_统计.xlsx.bak"
+      },
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\branch_reports\\广州分公司_统计.xlsx",
+        "action": "overwrite",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020137_298709\\广州分公司_统计.xlsx.bak"
+      },
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\branch_reports\\深圳分公司_统计.xlsx",
+        "action": "overwrite",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020137_298709\\深圳分公司_统计.xlsx.bak"
+      },
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\branch_reports\\集团总册.xlsx",
+        "action": "overwrite",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020137_298709\\集团总册.xlsx.bak"
+      }
+    ],
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020137_298709",
+    "operator": "Perfree",
+    "batch_id": "",
+    "input_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\合并花名册.xlsx",
+        "digest": "sha256:79c5be7d5d4a9ecf",
+        "size": 11357
+      }
+    ],
+    "output_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\branch_reports\\上海总部_统计.xlsx",
+        "digest": "sha256:fa5ac6d26718ae4c",
+        "size": 11374
+      },
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\branch_reports\\北京分公司_统计.xlsx",
+        "digest": "sha256:eb2704ad62d7339c",
+        "size": 11884
+      },
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\branch_reports\\广州分公司_统计.xlsx",
+        "digest": "sha256:f9883a4e4d5a489c",
+        "size": 11528
+      },
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\branch_reports\\深圳分公司_统计.xlsx",
+        "digest": "sha256:ff458cb5c9bb69d8",
+        "size": 11598
+      },
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\branch_reports\\集团总册.xlsx",
+        "digest": "sha256:9e4e068be9ba18b1",
+        "size": 14559
+      }
+    ]
+  },
+  {
+    "timestamp": "20260612_020152_448451",
+    "command": "mask",
+    "args": {
+      "input": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2.xlsx",
+      "output": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2_脱敏.xlsx",
+      "fields": [
+        "银行卡号",
+        "紧急联系电话",
+        "身份证号",
+        "薪资",
+        "手机号"
+      ]
+    },
+    "files": [
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2_脱敏.xlsx",
+        "action": "overwrite",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020152_448451\\集团花名册_Q2_脱敏.xlsx.bak"
+      }
+    ],
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020152_448451",
+    "operator": "李四",
+    "batch_id": "B20260612-11c808c3",
+    "input_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2.xlsx",
+        "digest": "sha256:9d840e80a33d1b79",
+        "size": 11356
+      }
+    ],
+    "output_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2_脱敏.xlsx",
+        "digest": "sha256:df585b71a7bc4bcc",
+        "size": 10718
+      }
+    ]
+  },
+  {
+    "timestamp": "20260612_020152_646102",
+    "command": "report",
+    "args": {
+      "input": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2.xlsx",
+      "filters": [
+        "分公司=上海总部"
+      ],
+      "group_by": "部门,职级",
+      "output": null,
+      "export_stats": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团统计_Q2.xlsx"
+    },
+    "files": [
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\上海总部_Q2明细.xlsx",
+        "action": "overwrite",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020152_646102\\上海总部_Q2明细.xlsx.bak"
+      },
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团统计_Q2.xlsx",
+        "action": "overwrite",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020152_646102\\集团统计_Q2.xlsx.bak"
+      }
+    ],
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020152_646102",
+    "operator": "李四",
+    "batch_id": "B20260612-11c808c3",
+    "input_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团花名册_Q2.xlsx",
+        "digest": "sha256:9d840e80a33d1b79",
+        "size": 11356
+      }
+    ],
+    "output_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\上海总部_Q2明细.xlsx",
+        "digest": "sha256:0166686a3256ee5f",
+        "size": 6834
+      },
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\集团统计_Q2.xlsx",
+        "digest": "sha256:5c2693c7a53541de",
+        "size": 15229
+      }
+    ]
+  },
+  {
+    "timestamp": "20260612_020152_731000",
+    "command": "batch",
+    "args": {
+      "plan": "E:\\trae-bz\\TraeProjects\\1294\\examples\\batch_plan.yaml",
+      "report": "E:\\trae-bz\\TraeProjects\\1294\\examples\\batch_resume_report.xlsx",
+      "steps": 7,
+      "success": 2,
+      "failed": 0,
+      "duration": 0.574,
+      "batch_id": "B20260612-11c808c3",
+      "skipped_resume": 5
+    },
+    "files": [
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\batch_resume_report.xlsx",
+        "action": "create",
+        "backup": null
+      }
+    ],
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_020152_731000",
+    "operator": "李四",
+    "batch_id": "B20260612-11c808c3",
+    "input_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\batch_plan.yaml",
+        "digest": "sha256:047044d173a6ddbf",
+        "size": 1765
+      }
+    ],
+    "output_digests": [
+      {
+        "path": "E:\\trae-bz\\TraeProjects\\1294\\examples\\batch_resume_report.xlsx",
+        "digest": "sha256:db6a7506c122ba8b",
+        "size": 7876
+      }
+    ]
   }
 ]
