@@ -1,0 +1,89 @@
+version: '1.0'
+fields:
+- name: 员工编号
+  required: true
+  unique: true
+  type: string
+- name: 姓名
+  required: true
+  unique: false
+  type: string
+- name: 身份证号
+  required: true
+  unique: true
+  type: id_card
+- name: 手机号
+  required: true
+  unique: true
+  type: phone
+- name: 性别
+  required: false
+  unique: false
+  type: enum
+  values:
+  - 男
+  - 女
+- name: 出生日期
+  required: false
+  unique: false
+  type: date
+- name: 入职日期
+  required: true
+  unique: false
+  type: date
+- name: 离职日期
+  required: false
+  unique: false
+  type: date
+- name: 部门
+  required: true
+  unique: false
+  type: string
+- name: 岗位
+  required: true
+  unique: false
+  type: string
+- name: 职级
+  required: false
+  unique: false
+  type: string
+- name: 分公司
+  required: true
+  unique: false
+  type: string
+- name: 邮箱
+  required: false
+  unique: false
+  type: email
+- name: 紧急联系人
+  required: false
+  unique: false
+  type: string
+- name: 紧急联系电话
+  required: false
+  unique: false
+  type: phone
+- name: 薪资
+  required: false
+  unique: false
+  type: number
+  sensitive: true
+- name: 银行卡号
+  required: false
+  unique: false
+  type: string
+  sensitive: true
+sensitive_fields:
+- 身份证号
+- 手机号
+- 薪资
+- 银行卡号
+- 紧急联系电话
+unique_keys:
+- 员工编号
+- 身份证号
+- 手机号
+department_field: 部门
+status_field: 员工状态
+join_date_field: 入职日期
+leave_date_field: 离职日期

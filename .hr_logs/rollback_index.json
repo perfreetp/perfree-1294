@@ -1,0 +1,116 @@
+[
+  {
+    "timestamp": "20260612_005915_823397",
+    "command": "check",
+    "args": {
+      "input": "E:\\trae-bz\\TraeProjects\\1294\\examples\\上海分公司_花名册.xlsx",
+      "output": "E:\\trae-bz\\TraeProjects\\1294\\examples\\error_report.xlsx"
+    },
+    "files": [
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\error_report.xlsx",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_005915_823397\\error_report.xlsx.bak"
+      }
+    ],
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_005915_823397"
+  },
+  {
+    "timestamp": "20260612_005927_827986",
+    "command": "merge",
+    "args": {
+      "inputs": [
+        "E:\\trae-bz\\TraeProjects\\1294\\examples\\上海分公司_花名册.xlsx",
+        "E:\\trae-bz\\TraeProjects\\1294\\examples\\北京分公司_花名册.xlsx",
+        "E:\\trae-bz\\TraeProjects\\1294\\examples\\深圳分公司_花名册.csv"
+      ],
+      "output": "E:\\trae-bz\\TraeProjects\\1294\\examples\\合并花名册.xlsx",
+      "maps": {}
+    },
+    "files": [
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\合并花名册.xlsx",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_005927_827986\\合并花名册.xlsx.bak"
+      }
+    ],
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_005927_827986"
+  },
+  {
+    "timestamp": "20260612_005950_060333",
+    "command": "split",
+    "args": {
+      "input": "E:\\trae-bz\\TraeProjects\\1294\\examples\\Q1_花名册.xlsx",
+      "output_dir": "E:\\trae-bz\\TraeProjects\\1294\\examples\\拆分结果",
+      "dept_field": "部门"
+    },
+    "files": [
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\拆分结果\\客户服务部.xlsx",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_005950_060333\\客户服务部.xlsx.bak"
+      },
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\拆分结果\\人力资源部.xlsx",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_005950_060333\\人力资源部.xlsx.bak"
+      },
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\拆分结果\\技术研发部.xlsx",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_005950_060333\\技术研发部.xlsx.bak"
+      },
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\拆分结果\\市场营销部.xlsx",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_005950_060333\\市场营销部.xlsx.bak"
+      },
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\拆分结果\\行政管理部.xlsx",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_005950_060333\\行政管理部.xlsx.bak"
+      },
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\拆分结果\\产品运营部.xlsx",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_005950_060333\\产品运营部.xlsx.bak"
+      },
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\拆分结果\\财务部.xlsx",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_005950_060333\\财务部.xlsx.bak"
+      }
+    ],
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_005950_060333"
+  },
+  {
+    "timestamp": "20260612_010002_963156",
+    "command": "compare",
+    "args": {
+      "old": "E:\\trae-bz\\TraeProjects\\1294\\examples\\Q1_花名册.xlsx",
+      "new": "E:\\trae-bz\\TraeProjects\\1294\\examples\\Q2_花名册.xlsx",
+      "output": "E:\\trae-bz\\TraeProjects\\1294\\examples\\Q1Q2对比.xlsx",
+      "key": "员工编号"
+    },
+    "files": [
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\Q1Q2对比.xlsx",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_010002_963156\\Q1Q2对比.xlsx.bak"
+      }
+    ],
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_010002_963156"
+  },
+  {
+    "timestamp": "20260612_010012_836712",
+    "command": "mask",
+    "args": {
+      "input": "E:\\trae-bz\\TraeProjects\\1294\\examples\\Q1_花名册.xlsx",
+      "output": "E:\\trae-bz\\TraeProjects\\1294\\examples\\脱敏花名册.xlsx",
+      "fields": [
+        "紧急联系电话",
+        "手机号",
+        "身份证号",
+        "薪资",
+        "银行卡号"
+      ]
+    },
+    "files": [
+      {
+        "original": "E:\\trae-bz\\TraeProjects\\1294\\examples\\脱敏花名册.xlsx",
+        "backup": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_010012_836712\\脱敏花名册.xlsx.bak"
+      }
+    ],
+    "snapshot_dir": "E:\\trae-bz\\TraeProjects\\1294\\.hr_logs\\snapshot_20260612_010012_836712"
+  }
+]
