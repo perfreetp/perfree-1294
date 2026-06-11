@@ -753,10 +753,216 @@ def _build_report_sheets(
     return stats_sheets, summary_rows
 
 
-def report_command(ctx, input_path: str, output: str, filters: List[str],
+def _compare_batches(ctx, batch_1_path: str, batch_2_path: str, output: Optional[str],
+                    export_stats: Optional[str] = None) -> None:
+    b1_abs = os.path.abspath(batch_1_path)
+    b2_abs = os.path.abspath(batch_2_path)
+    click.echo(f"🔍 跨批次对比")
+    click.echo(f"   批次1（基准）: {click.format_filename(b1_abs)}")
+    click.echo(f"   批次2（对比）: {click.format_filename(b2_abs)}")
+    click.echo()
+
+    try:
+        xls1 = pd.ExcelFile(b1_abs)
+        xls2 = pd.ExcelFile(b2_abs)
+    except Exception as e:
+        click.echo(f"❌ 读取集团总册失败: {e}", err=True)
+        sys.exit(1)
+
+    required_sheets = {"分公司对比", "异常数据汇总"}
+    missing_1 = required_sheets - set(xls1.sheet_names)
+    missing_2 = required_sheets - set(xls2.sheet_names)
+    if missing_1:
+        click.echo(f"❌ 批次1缺少必要 Sheet: {', '.join(missing_1)}", err=True)
+        sys.exit(1)
+    if missing_2:
+        click.echo(f"❌ 批次2缺少必要 Sheet: {', '.join(missing_2)}", err=True)
+        sys.exit(1)
+
+    b1_compare = pd.read_excel(xls1, sheet_name="分公司对比")
+    b2_compare = pd.read_excel(xls2, sheet_name="分公司对比")
+    b1_anomaly = pd.read_excel(xls1, sheet_name="异常数据汇总")
+    b2_anomaly = pd.read_excel(xls2, sheet_name="异常数据汇总")
+
+    branch_col = b1_compare.columns[0]
+    branch_field = str(branch_col)
+
+    b1_dict = {}
+    for _, row in b1_compare.iterrows():
+        bv = str(row[branch_col]).strip()
+        b1_dict[bv] = row.to_dict()
+
+    b2_dict = {}
+    for _, row in b2_compare.iterrows():
+        bv = str(row[branch_col]).strip()
+        b2_dict[bv] = row.to_dict()
+
+    all_branches = sorted(set(list(b1_dict.keys()) + list(b2_dict.keys())))
+
+    compare_rows = []
+    total_b1 = {"人数": 0, "部门数": 0, "职级数": 0}
+    total_b2 = {"人数": 0, "部门数": 0, "职级数": 0}
+    numeric_cols = ["人数", "部门数", "职级数"]
+
+    for bv in all_branches:
+        r1 = b1_dict.get(bv, {})
+        r2 = b2_dict.get(bv, {})
+        row = {branch_field: bv}
+        for col in numeric_cols:
+            v1 = int(r1.get(col, 0) or 0)
+            v2 = int(r2.get(col, 0) or 0)
+            row[f"批次1-{col}"] = v1
+            row[f"批次2-{col}"] = v2
+            row[f"变化量-{col}"] = v2 - v1
+            change_pct = f"{((v2-v1)/v1*100):+.1f}%" if v1 > 0 else ("+" if v2 > 0 else "=")
+            row[f"变化率-{col}"] = change_pct
+            if col in total_b1:
+                total_b1[col] += v1
+                total_b2[col] += v2
+
+        in_b1 = bv in b1_dict
+        in_b2 = bv in b2_dict
+        if in_b1 and not in_b2:
+            row["状态"] = "已关闭"
+        elif not in_b1 and in_b2:
+            row["状态"] = "新增"
+        else:
+            row["状态"] = "存续"
+        compare_rows.append(row)
+
+    total_row = {branch_field: "合计"}
+    for col in numeric_cols:
+        v1 = total_b1[col]
+        v2 = total_b2[col]
+        total_row[f"批次1-{col}"] = v1
+        total_row[f"批次2-{col}"] = v2
+        total_row[f"变化量-{col}"] = v2 - v1
+        total_row[f"变化率-{col}"] = f"{((v2-v1)/v1*100):+.1f}%" if v1 > 0 else ("+" if v2 > 0 else "=")
+    total_row["状态"] = ""
+    compare_rows.append(total_row)
+
+    compare_df = pd.DataFrame(compare_rows)
+
+    b1_anom_count = 0 if (len(b1_anomaly) == 1 and "说明" in b1_anomaly.columns and str(b1_anomaly.iloc[0]["说明"]).startswith("未发现")) else len(b1_anomaly)
+    b2_anom_count = 0 if (len(b2_anomaly) == 1 and "说明" in b2_anomaly.columns and str(b2_anomaly.iloc[0]["说明"]).startswith("未发现")) else len(b2_anomaly)
+
+    anom_by_type_b1: Dict[str, int] = {}
+    anom_by_type_b2: Dict[str, int] = {}
+    if b1_anom_count > 0:
+        for _, row in b1_anomaly.iterrows():
+            t = str(row.get("异常类型", "其他"))
+            cnt = int(row.get("出现次数", 1) or 1)
+            anom_by_type_b1[t] = anom_by_type_b1.get(t, 0) + cnt
+    if b2_anom_count > 0:
+        for _, row in b2_anomaly.iterrows():
+            t = str(row.get("异常类型", "其他"))
+            cnt = int(row.get("出现次数", 1) or 1)
+            anom_by_type_b2[t] = anom_by_type_b2.get(t, 0) + cnt
+
+    all_anom_types = sorted(set(list(anom_by_type_b1.keys()) + list(anom_by_type_b2.keys())))
+    anomaly_rows = []
+    for t in all_anom_types:
+        v1 = anom_by_type_b1.get(t, 0)
+        v2 = anom_by_type_b2.get(t, 0)
+        anomaly_rows.append({
+            "异常类型": t,
+            "批次1-出现次数": v1,
+            "批次2-出现次数": v2,
+            "变化量": v2 - v1,
+            "变化率": f"{((v2-v1)/v1*100):+.1f}%" if v1 > 0 else ("+" if v2 > 0 else "="),
+        })
+    anomaly_rows.append({
+        "异常类型": "合计",
+        "批次1-出现次数": b1_anom_count,
+        "批次2-出现次数": b2_anom_count,
+        "变化量": b2_anom_count - b1_anom_count,
+        "变化率": f"{((b2_anom_count-b1_anom_count)/b1_anom_count*100):+.1f}%" if b1_anom_count > 0 else ("+" if b2_anom_count > 0 else "="),
+    })
+    anomaly_df = pd.DataFrame(anomaly_rows)
+
+    summary_rows = []
+    summary_rows.append({"指标": "总人数", "批次1": total_b1["人数"], "批次2": total_b2["人数"], "变化量": total_b2["人数"]-total_b1["人数"]})
+    summary_rows.append({"指标": "总部门数", "批次1": total_b1["部门数"], "批次2": total_b2["部门数"], "变化量": total_b2["部门数"]-total_b1["部门数"]})
+    summary_rows.append({"指标": "总职级数", "批次1": total_b1["职级数"], "批次2": total_b2["职级数"], "变化量": total_b2["职级数"]-total_b1["职级数"]})
+    summary_rows.append({"指标": "分公司数", "批次1": len(b1_dict), "批次2": len(b2_dict), "变化量": len(b2_dict)-len(b1_dict)})
+    summary_rows.append({"指标": "异常条目数", "批次1": b1_anom_count, "批次2": b2_anom_count, "变化量": b2_anom_count-b1_anom_count})
+    summary_df = pd.DataFrame(summary_rows)
+
+    output_rows = []
+    for bv in all_branches:
+        if bv in b1_dict and bv not in b2_dict:
+            output_rows.append({"变动类型": "分公司关闭", branch_field: bv, "原有人数": b1_dict[bv].get("人数", 0), "现有人数": 0})
+        elif bv not in b1_dict and bv in b2_dict:
+            output_rows.append({"变动类型": "分公司新增", branch_field: bv, "原有人数": 0, "现有人数": b2_dict[bv].get("人数", 0)})
+    for t in all_anom_types:
+        v1 = anom_by_type_b1.get(t, 0)
+        v2 = anom_by_type_b2.get(t, 0)
+        if v2 > v1:
+            output_rows.append({"变动类型": f"异常增加:{t}", branch_field: "全集团", "原有人数": v1, "现有人数": v2})
+        elif v2 < v1:
+            output_rows.append({"变动类型": f"异常减少:{t}", branch_field: "全集团", "原有人数": v1, "现有人数": v2})
+    changes_df = pd.DataFrame(output_rows) if output_rows else pd.DataFrame(columns=["变动类型", branch_field, "原有人数", "现有人数"])
+
+    click.echo("=" * 60)
+    click.echo("📊 跨批次对比摘要")
+    click.echo("=" * 60)
+    for _, row in summary_df.iterrows():
+        change = row["变化量"]
+        arrow = "↑" if change > 0 else ("↓" if change < 0 else "=")
+        color = "🟢" if (change < 0 and row["指标"] == "异常条目数") else ("🔴" if change > 0 and row["指标"] == "异常条目数" else ("🔴" if change > 0 else ("🟢" if change < 0 else "⚪")))
+        sign = "+" if change > 0 else ""
+        click.echo(f"   {color} {row['指标']:12s}  {row['批次1']:>6d} → {row['批次2']:>6d}  ({sign}{change}) {arrow}")
+
+    if not changes_df.empty:
+        click.echo()
+        click.echo("⚠️  重点关注变动:")
+        for _, row in changes_df.iterrows():
+            click.echo(f"   · {row['变动类型']} - {row[branch_field]}: {row['原有人数']} → {row['现有人数']}")
+
+    if output or export_stats:
+        out_path = output or export_stats
+        if not out_path:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            out_path = os.path.join(os.path.dirname(b1_abs), f"批次对比_{timestamp}.xlsx")
+        out_abs = os.path.abspath(out_path)
+
+        sheets = {
+            "0-管理层摘要": summary_df,
+            "1-分公司对比明细": compare_df,
+            "2-异常数据对比": anomaly_df,
+            "3-重点变动清单": changes_df,
+        }
+        _write_multi_sheet_excel(sheets, out_abs)
+        click.echo()
+        click.echo(f"💾 跨批次对比报告: {click.format_filename(out_abs)}")
+        click.echo(f"   Sheet 列表: {', '.join(sheets.keys())}")
+
+    log_operation(
+        ctx.base_dir, "report",
+        [out_abs] if (output or export_stats) else [],
+        {"compare_batches": True, "batch_1": b1_abs, "batch_2": b2_abs},
+        operator=ctx.operator, batch_id=ctx.batch_id, input_files=[b1_abs, b2_abs],
+    )
+
+
+def report_command(ctx, input_path: Optional[str], output: str, filters: List[str],
                    filter_output: str, group_by: str, export_stats: str,
                    per_branch: bool = False, branch_field: str = "分公司",
-                   branch_dir: Optional[str] = None):
+                   branch_dir: Optional[str] = None,
+                   compare_batches: bool = False,
+                   batch_1_path: Optional[str] = None,
+                   batch_2_path: Optional[str] = None):
+    if compare_batches:
+        if not batch_1_path or not batch_2_path:
+            click.echo("❌ 请指定 --batch-1 和 --batch-2 两个集团总册路径", err=True)
+            sys.exit(1)
+        _compare_batches(ctx, batch_1_path, batch_2_path, output, export_stats)
+        return
+
+    if not input_path:
+        click.echo("❌ 请指定输入文件路径", err=True)
+        sys.exit(1)
+
     config = ctx.config
     input_abs = os.path.abspath(input_path)
     click.echo(f"📂 读取: {click.format_filename(input_abs)}")
@@ -1367,13 +1573,27 @@ def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
             last_name = checkpoint.get("last_step_name", "")
             last_status = checkpoint.get("last_step_status", "")
             click.echo(f"📍 发现断点: 批次 {ctx.batch_id} 上次执行到步骤 {last_step+1}({last_name})，状态={last_status}")
+
+            if last_step >= len(steps) - 1 and last_status in ("success", "warnings"):
+                click.echo(f"✅ 批次 {ctx.batch_id} 已全部完成（共 {len(steps)} 步），无需继续。")
+                click.echo(f"   如需重新执行，请使用新的批次号从头开始，或不指定 --batch-id 自动生成新批次。")
+                return
+
             if last_status in ("success", "warnings"):
                 resume_from = str(last_step + 2)
             else:
                 resume_from = str(last_step + 1)
                 click.echo(f"   上次步骤未成功，将从该步骤重新执行")
         else:
-            click.echo(f"ℹ️  未找到批次 {ctx.batch_id} 的断点记录，从头开始执行")
+            ops_with_batch = list_operations(ctx.base_dir, limit=100, batch_id=ctx.batch_id)
+            if ops_with_batch:
+                latest = ops_with_batch[-1]
+                click.echo(f"ℹ️  批次 {ctx.batch_id} 已有操作记录（{latest.get('timestamp', '')}），但无断点信息。")
+                click.echo(f"   该批次可能已完成，或历史记录已清理。")
+                if not click.confirm("是否仍要从头开始执行？", default=False):
+                    click.echo("已取消。建议使用新批次号重新运行。")
+                    return
+            click.echo(f"ℹ️  从头开始执行批次 {ctx.batch_id}")
 
     if dry_run:
         click.echo("🔍 DRY RUN 模式 - 仅预览，不实际执行\n")
@@ -1424,6 +1644,14 @@ def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
             else:
                 click.echo(f"❌ 找不到步骤: {resume_from}", err=True)
                 sys.exit(1)
+        if start_idx >= len(steps):
+            click.echo(f"⚠️  步骤 {resume_from} 超出任务清单范围（共 {len(steps)} 步）。")
+            if checkpoint and checkpoint.get("last_completed_step", -1) >= len(steps) - 1:
+                click.echo(f"✅ 批次 {ctx.batch_id} 已全部完成，无需继续。")
+                click.echo(f"   如需重新执行，请使用新的批次号。")
+            else:
+                click.echo(f"   请指定 1-{len(steps)} 之间的步骤号，或使用 --resume 自动判断。")
+            return
         if start_idx < 0:
             start_idx = 0
         if checkpoint and checkpoint.get("last_step_status") not in ("success", "warnings"):
@@ -1463,6 +1691,17 @@ def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
         result = _run_batch_step(ctx, step, plan_dir)
         if step_status_label:
             result["status_label"] = step_status_label
+
+        last_op = get_last_operation(ctx.base_dir)
+        if last_op and last_op.get("command") == step["command"]:
+            result["audit_id"] = last_op.get("timestamp", "")
+            result["input_digests"] = last_op.get("input_digests", [])
+            result["file_records"] = last_op.get("files", [])
+        else:
+            result["audit_id"] = ""
+            result["input_digests"] = []
+            result["file_records"] = []
+
         results.append(result)
         icon = {"success": "✅", "warnings": "⚠️ ", "failed": "❌", "failed_exit": "❌"}.get(result["status"], "?")
         label_tag = f" [{step_status_label}]" if step_status_label else ""
@@ -1532,13 +1771,56 @@ def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
         "参数": json.dumps(r["args"], ensure_ascii=False),
     } for r in results])
 
+    handoff_rows = []
+    for r in results:
+        step_idx = r["index"]
+        step_cmd = r["command"]
+        audit_id = r.get("audit_id", "")
+        input_digests = r.get("input_digests", [])
+        files = r.get("file_records", [])
+
+        output_by_path = {}
+        for rf in files:
+            output_by_path[rf.get("original", "")] = rf
+
+        input_paths = [d.get("path", "") for d in input_digests]
+        input_str = " | ".join([os.path.basename(p) for p in input_paths]) if input_paths else ""
+        input_digest_str = " | ".join([d.get("digest", "")[:12] for d in input_digests]) if input_digests else ""
+
+        for out_file in r["output_files"]:
+            rf = output_by_path.get(os.path.abspath(out_file), {})
+            action = rf.get("action", "")
+            act_label = {"create": "新建", "overwrite": "覆盖"}.get(action, "未知")
+            pre_digest = rf.get("pre_digest", "") or ""
+            post_digest = rf.get("post_digest", "") or ""
+            handoff_rows.append({
+                "步骤序号": step_idx + 1,
+                "步骤名称": r["name"],
+                "命令": step_cmd,
+                "状态标签": r.get("status_label", ""),
+                "输入文件": input_str,
+                "输入摘要": input_digest_str,
+                "输出文件": out_file,
+                "操作类型": act_label,
+                "覆盖前摘要": pre_digest,
+                "覆盖后摘要": post_digest,
+                "审计记录号": audit_id,
+                "退出码": r["exit_code"],
+                "耗时(秒)": r["duration_sec"],
+            })
+
+    handoff_df = pd.DataFrame(handoff_rows) if handoff_rows else pd.DataFrame(columns=[
+        "步骤序号", "步骤名称", "命令", "状态标签", "输入文件", "输入摘要",
+        "输出文件", "操作类型", "覆盖前摘要", "覆盖后摘要", "审计记录号", "退出码", "耗时(秒)"
+    ])
+
     all_outputs = []
     for r in results:
         for f in r["output_files"]:
             all_outputs.append({"步骤序号": r["index"]+1, "步骤名称": r["name"], "输出文件": f})
     outputs_df = pd.DataFrame(all_outputs) if all_outputs else pd.DataFrame(columns=["步骤序号", "步骤名称", "输出文件"])
 
-    sheets = {"0-批处理摘要": summary_df, "1-步骤明细": steps_df, "2-所有输出文件": outputs_df}
+    sheets = {"0-批处理摘要": summary_df, "1-步骤明细": steps_df, "2-所有输出文件": outputs_df, "3-交接清单": handoff_df}
     pre_existing = _existing_paths([report_abs])
     prepared = prepare_backup(ctx.base_dir, [report_abs], pre_existing_files=pre_existing)
     if report_abs.lower().endswith((".xlsx", ".xls")):

@@ -105,8 +105,8 @@ def mask_cmd(ctx: HRContext, input: str, output: str, fields: tuple, mask_all: b
     cmd.mask_command(ctx, input, output, list(fields), mask_all)
 
 
-@main.command("report", help="生成统计摘要、按条件筛选员工，支持按分公司出分册")
-@click.argument("input", type=click.Path(exists=True, dir_okay=False))
+@main.command("report", help="生成统计摘要、按条件筛选员工，支持按分公司出分册和跨批次对比")
+@click.argument("input", type=click.Path(exists=True, dir_okay=False), required=False)
 @click.option("-o", "--output", type=click.Path(), default=None, help="摘要输出路径（默认控制台）")
 @click.option("-f", "--filter", "filters", multiple=True, type=str, help="筛选条件: 字段=值，支持 != > < 包含 等，可多次使用")
 @click.option("--filter-output", type=click.Path(), default=None, help="筛选结果输出路径")
@@ -115,11 +115,23 @@ def mask_cmd(ctx: HRContext, input: str, output: str, fields: tuple, mask_all: b
 @click.option("--per-branch", is_flag=True, help="按分公司字段分别生成分册 Excel + 集团总册")
 @click.option("--branch-field", type=str, default="分公司", help="分公司字段名（配合 --per-branch）")
 @click.option("--branch-dir", type=str, default=None, help="分册输出目录（配合 --per-branch，默认同目录下 branch_reports/）")
+@click.option("--compare-batches", is_flag=True, help="跨批次对比模式：比较两个集团总册的变化")
+@click.option("--batch-1", type=click.Path(exists=True, dir_okay=False), help="批次1集团总册路径（配合 --compare-batches）")
+@click.option("--batch-2", type=click.Path(exists=True, dir_okay=False), help="批次2集团总册路径（配合 --compare-batches）")
 @pass_hr
 def report_cmd(ctx: HRContext, input: str, output: str, filters: tuple, filter_output: str,
-               group_by: str, export_stats: str, per_branch: bool, branch_field: str, branch_dir: str):
-    cmd.report_command(ctx, input, output, list(filters), filter_output, group_by, export_stats,
-                       per_branch=per_branch, branch_field=branch_field, branch_dir=branch_dir)
+               group_by: str, export_stats: str, per_branch: bool, branch_field: str, branch_dir: str,
+               compare_batches: bool, batch_1: str, batch_2: str):
+    if compare_batches:
+        cmd.report_command(ctx, input, output, list(filters), filter_output, group_by, export_stats,
+                           per_branch=per_branch, branch_field=branch_field, branch_dir=branch_dir,
+                           compare_batches=True, batch_1_path=batch_1, batch_2_path=batch_2)
+    else:
+        if not input:
+            click.echo("❌ 请指定输入文件路径，或使用 --compare-batches 模式", err=True)
+            sys.exit(1)
+        cmd.report_command(ctx, input, output, list(filters), filter_output, group_by, export_stats,
+                           per_branch=per_branch, branch_field=branch_field, branch_dir=branch_dir)
 
 
 @main.command("rollback", help="回滚上一次操作（支持预览确认）")

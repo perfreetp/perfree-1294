@@ -217,6 +217,34 @@ def log_operation(
             meta = _file_meta(abs_out)
             output_digests.append({"path": meta["path"], "digest": meta.get("digest"), "size": meta.get("size")})
 
+    for rf in recorded_files:
+        action = rf.get("action", "")
+        if action == "overwrite":
+            backup_path = rf.get("backup")
+            if backup_path and os.path.exists(backup_path):
+                rf["pre_digest"] = _file_digest(backup_path)
+            else:
+                rf["pre_digest"] = ""
+            abs_out = rf.get("original", "")
+            if abs_out and os.path.exists(abs_out):
+                rf["post_digest"] = _file_digest(abs_out)
+            else:
+                rf["post_digest"] = ""
+        elif action == "create":
+            abs_out = rf.get("original", "")
+            if abs_out and os.path.exists(abs_out):
+                rf["post_digest"] = _file_digest(abs_out)
+            else:
+                rf["post_digest"] = ""
+            rf["pre_digest"] = ""
+        elif action == "delete":
+            backup_path = rf.get("backup")
+            if backup_path and os.path.exists(backup_path):
+                rf["pre_digest"] = _file_digest(backup_path)
+            else:
+                rf["pre_digest"] = ""
+            rf["post_digest"] = ""
+
     record = {
         "timestamp": timestamp,
         "command": command,
@@ -245,6 +273,10 @@ def log_operation(
             f.write(f"  {mark} {rf['original']}")
             if rf["backup"]:
                 f.write(f"  (备份: {rf['backup']})")
+            if rf.get("pre_digest"):
+                f.write(f"  覆盖前={rf['pre_digest']}")
+            if rf.get("post_digest"):
+                f.write(f"  覆盖后={rf['post_digest']}")
             f.write("\n")
         if input_digests:
             f.write("输入文件摘要:\n")
@@ -489,31 +521,19 @@ def export_audit_ledger(base_dir: str, output_path: str, batch_id: Optional[str]
         cmd = op.get("command", "")
         operator = op.get("operator", "")
         bid = op.get("batch_id", "")
-        input_digest_map = {d["path"]: d for d in op.get("input_digests", [])}
-        output_digest_map = {d["path"]: d for d in op.get("output_digests", [])}
         for rf in op.get("files", []):
             original = rf.get("original", "")
             action = rf.get("action", "")
             act_label = {"create": "新建", "overwrite": "覆盖", "delete": "删除"}.get(action, action)
             backup = rf.get("backup") or ""
-            pre_digest = ""
-            post_digest = ""
+            pre_digest = rf.get("pre_digest", "") or ""
+            post_digest = rf.get("post_digest", "") or ""
             digest_changed = ""
             if action == "overwrite":
-                pre_info = input_digest_map.get(original, {})
-                pre_digest = pre_info.get("digest", "") if pre_info else ""
-                post_info = output_digest_map.get(original, {})
-                post_digest = post_info.get("digest", "") if post_info else ""
                 if pre_digest and post_digest:
                     digest_changed = "是" if pre_digest != post_digest else "否(相同)"
                 elif pre_digest or post_digest:
                     digest_changed = "部分可对比"
-            elif action == "create":
-                post_info = output_digest_map.get(original, {})
-                post_digest = post_info.get("digest", "") if post_info else ""
-            elif action == "delete":
-                pre_info = input_digest_map.get(original, {})
-                pre_digest = pre_info.get("digest", "") if pre_info else ""
             file_rows.append({
                 "时间戳": ts,
                 "命令": cmd,
