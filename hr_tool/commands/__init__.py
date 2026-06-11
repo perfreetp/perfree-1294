@@ -18,7 +18,7 @@ from ..validator import (
     validate_enum, validate_number, mask_value, get_id_card_info,
 )
 from ..io_utils import read_file, write_file, read_multiple_files, ensure_columns
-from ..logger import log_operation, rollback_last, list_operations, clear_history, get_last_operation, preview_rollback, export_audit_ledger, generate_batch_id
+from ..logger import log_operation, prepare_backup, rollback_last, list_operations, clear_history, get_last_operation, preview_rollback, export_audit_ledger, generate_batch_id, save_checkpoint, load_checkpoint, clear_checkpoint
 
 
 def _existing_paths(paths):
@@ -162,6 +162,7 @@ def check_command(ctx, input_path: str, output_path: str, skip_dup: bool, skip_f
             click.echo(f"     - {t}: {c}")
 
     pre_existing = _existing_paths([output_abs])
+    prepared = prepare_backup(ctx.base_dir, [output_abs], pre_existing_files=pre_existing)
     write_file(pd.DataFrame(errors) if errors else pd.DataFrame([{
         "行号": "", "字段": "", "错误类型": "无", "错误详情": "全部数据校验通过", "当前值": ""
     }]), output_abs)
@@ -177,6 +178,7 @@ def check_command(ctx, input_path: str, output_path: str, skip_dup: bool, skip_f
         {"input": input_abs, "output": output_abs, "error_count": error_count, "template_failed": template_failed},
         pre_existing_files=pre_existing,
         operator=ctx.operator, batch_id=ctx.batch_id, input_files=[input_abs],
+        prepared=prepared,
     )
     sys.exit(0 if error_count == 0 and not template_failed else 2 if template_failed else 1)
 
@@ -259,6 +261,7 @@ def merge_command(ctx, inputs: List[str], output: str, maps: List[str], map_file
                 if dup > 0:
                     click.echo(f"   ⚠️  {fname} 有 {dup} 条重复")
     pre_existing = _existing_paths([output_abs])
+    prepared = prepare_backup(ctx.base_dir, [output_abs], pre_existing_files=pre_existing)
     write_file(merged, output_abs)
     click.echo(f"💾 写入: {click.format_filename(output_abs)}")
 
@@ -267,6 +270,7 @@ def merge_command(ctx, inputs: List[str], output: str, maps: List[str], map_file
         {"inputs": input_abss, "output": output_abs, "maps": field_mapping},
         pre_existing_files=pre_existing,
         operator=ctx.operator, batch_id=ctx.batch_id, input_files=input_abss,
+        prepared=prepared,
     )
 
 
@@ -311,6 +315,9 @@ def split_command(ctx, input_path: str, output_dir: str, dept_field: str, file_f
         generated_files.append(out_path)
     pre_existing_files = _existing_paths(generated_files)
 
+    prepared = prepare_backup(ctx.base_dir, generated_files + [output_abs],
+                              pre_existing_files=pre_existing_files + pre_existing_dirs)
+
     generated_files = []
     total = 0
     for dept_name, group in groups:
@@ -329,6 +336,7 @@ def split_command(ctx, input_path: str, output_dir: str, dept_field: str, file_f
         {"input": input_abs, "output_dir": output_abs, "dept_field": dept},
         pre_existing_files=pre_existing_files + pre_existing_dirs,
         operator=ctx.operator, batch_id=ctx.batch_id, input_files=[input_abs],
+        prepared=prepared,
     )
 
 
@@ -445,6 +453,7 @@ def compare_command(ctx, old_path: str, new_path: str, output: str,
     result_df = result_df[[c for c in col_order if c in result_df.columns]]
 
     pre_existing = _existing_paths([output_abs])
+    prepared = prepare_backup(ctx.base_dir, [output_abs], pre_existing_files=pre_existing)
     write_file(result_df, output_abs)
 
     click.echo(f"\n📊 对比结果:")
@@ -460,6 +469,7 @@ def compare_command(ctx, old_path: str, new_path: str, output: str,
         {"old": old_abs, "new": new_abs, "output": output_abs, "key": key},
         pre_existing_files=pre_existing,
         operator=ctx.operator, batch_id=ctx.batch_id, input_files=[old_abs, new_abs],
+        prepared=prepared,
     )
 
 
@@ -498,6 +508,7 @@ def mask_command(ctx, input_path: str, output: str, fields: List[str], mask_all:
         df[fname] = df[fname].apply(lambda v: mask_value(v, fname))
 
     pre_existing = _existing_paths([output_abs])
+    prepared = prepare_backup(ctx.base_dir, [output_abs], pre_existing_files=pre_existing)
     write_file(df, output_abs)
     click.echo(f"✅ {len(df)} 条记录已脱敏")
     click.echo(f"💾 输出: {click.format_filename(output_abs)}")
@@ -507,6 +518,7 @@ def mask_command(ctx, input_path: str, output: str, fields: List[str], mask_all:
         {"input": input_abs, "output": output_abs, "fields": actual_fields},
         pre_existing_files=pre_existing,
         operator=ctx.operator, batch_id=ctx.batch_id, input_files=[input_abs],
+        prepared=prepared,
     )
 
 
@@ -757,6 +769,8 @@ def report_command(ctx, input_path: str, output: str, filters: List[str],
     all_outputs = []
     pre_existing_all = []
     _filter_output_pre = []
+    _filter_output_path = None
+    _filter_prepared = None
 
     if filters:
         click.echo("\n🔍 应用筛选条件:")
@@ -774,9 +788,11 @@ def report_command(ctx, input_path: str, output: str, filters: List[str],
             fout = os.path.abspath(filter_output)
             all_outputs.append(fout)
             pre_f = _existing_paths([fout])
+            _filter_prepared = prepare_backup(ctx.base_dir, [fout], pre_existing_files=pre_f)
             write_file(report_df.reset_index(drop=True), fout)
             click.echo(f"💾 筛选明细已保存: {click.format_filename(fout)}")
             _filter_output_pre = pre_f
+            _filter_output_path = fout
 
     if per_branch:
         if branch_field not in report_df.columns:
@@ -791,6 +807,24 @@ def report_command(ctx, input_path: str, output: str, filters: List[str],
         branch_values = sorted(report_df[branch_field].astype(str).str.strip().unique())
         click.echo(f"\n🏢 按 '{branch_field}' 分册: 共 {len(branch_values)} 个分公司")
 
+        all_outputs = []
+        for bv in branch_values:
+            bv_str = str(bv).strip()
+            out_path = os.path.join(branch_dir_abs, f"{_safe_filename(bv_str)}_统计.xlsx")
+            all_outputs.append(out_path)
+        master_path = os.path.join(branch_dir_abs, "集团总册.xlsx")
+        all_outputs.append(master_path)
+        if _filter_output_pre:
+            pre_existing_all.extend(_filter_output_pre)
+        non_filter_outputs = [o for o in all_outputs if o != _filter_output_path]
+        pre_existing_all.extend(_existing_paths(non_filter_outputs))
+        prepared = prepare_backup(ctx.base_dir, non_filter_outputs, pre_existing_files=pre_existing_all)
+        if _filter_prepared:
+            prepared["recorded_files"] = _filter_prepared["recorded_files"] + prepared["recorded_files"]
+            if _filter_prepared["timestamp"] < prepared["timestamp"]:
+                prepared["timestamp"] = _filter_prepared["timestamp"]
+                prepared["snapshot_dir"] = _filter_prepared["snapshot_dir"]
+
         for bv in branch_values:
             bv_str = str(bv).strip()
             branch_df = report_df[report_df[branch_field].astype(str).str.strip() == bv_str].copy()
@@ -798,18 +832,19 @@ def report_command(ctx, input_path: str, output: str, filters: List[str],
             stats_sheets, summary_rows = _build_report_sheets(
                 branch_df, original_df, config, applied_filters, group_by, input_abs)
             out_path = os.path.join(branch_dir_abs, f"{_safe_filename(bv_str)}_统计.xlsx")
-            all_outputs.append(out_path)
             _write_multi_sheet_excel(stats_sheets, out_path)
             click.echo(f"   💾 已写入: {click.format_filename(out_path)}")
 
         master_sheets, master_summary = _build_report_sheets(
             report_df, original_df, config, applied_filters, group_by, input_abs)
 
-        compare_rows = []
         dept_field = config.department_field
         level_field = "职级"
         join_field = config.join_date_field
         leave_field = config.leave_date_field
+        this_year = datetime.now().year
+
+        compare_rows = []
         for bv in branch_values:
             bv_str = str(bv).strip()
             bv_df = report_df[report_df[branch_field].astype(str).str.strip() == bv_str]
@@ -820,7 +855,6 @@ def report_command(ctx, input_path: str, output: str, filters: List[str],
                 row["职级数"] = bv_df[level_field].astype(str).str.strip().nunique()
             if join_field in bv_df.columns:
                 join_dates = _series_to_dates(bv_df[join_field])
-                this_year = datetime.now().year
                 row[f"{this_year}年入职"] = sum(
                     1 for d in join_dates if d is not None and not pd.isna(d) and d.year == this_year)
             if leave_field in bv_df.columns:
@@ -829,15 +863,75 @@ def report_command(ctx, input_path: str, output: str, filters: List[str],
             compare_rows.append(row)
         master_sheets["分公司对比"] = pd.DataFrame(compare_rows)
 
-        master_path = os.path.join(branch_dir_abs, "集团总册.xlsx")
-        all_outputs.append(master_path)
+        if join_field in report_df.columns or leave_field in report_df.columns:
+            trend_rows = []
+            for bv in branch_values:
+                bv_str = str(bv).strip()
+                bv_df = report_df[report_df[branch_field].astype(str).str.strip() == bv_str]
+                if join_field in bv_df.columns:
+                    join_dates = _series_to_dates(bv_df[join_field])
+                    join_months = [d.strftime("%Y-%m") for d in join_dates if d is not None and not pd.isna(d)]
+                    for m, cnt in Counter(join_months).items():
+                        trend_rows.append({branch_field: bv_str, "月份": m, "类型": "入职", "人数": cnt})
+                if leave_field in bv_df.columns:
+                    leave_dates = _series_to_dates(bv_df[leave_field])
+                    leave_months = [d.strftime("%Y-%m") for d in leave_dates if d is not None and not pd.isna(d)]
+                    for m, cnt in Counter(leave_months).items():
+                        trend_rows.append({branch_field: bv_str, "月份": m, "类型": "离职", "人数": cnt})
+            if trend_rows:
+                trend_df = pd.DataFrame(trend_rows).sort_values(["月份", branch_field, "类型"])
+                master_sheets["分公司趋势对比"] = trend_df.reset_index(drop=True)
+
+        anomaly_rows = []
+        unique_fields = config.get_unique_fields()
+        for uf in unique_fields:
+            if uf in report_df.columns:
+                vals = report_df[uf].astype(str).str.strip()
+                non_empty = vals[vals != ""]
+                dup_vals = non_empty[non_empty.duplicated(keep=False)]
+                for dv in dup_vals.unique():
+                    count = (non_empty == dv).sum()
+                    anomaly_rows.append({
+                        "异常类型": f"{uf}重复",
+                        "字段": uf,
+                        "异常值": dv,
+                        "出现次数": count,
+                    })
+        for field_def in config.fields:
+            if field_def.required and field_def.name in report_df.columns:
+                empty_mask = report_df[field_def.name].astype(str).str.strip().isin(["", "nan", "None"])
+                empty_count = empty_mask.sum()
+                if empty_count > 0:
+                    anomaly_rows.append({
+                        "异常类型": "必填字段为空",
+                        "字段": field_def.name,
+                        "异常值": f"(空值 {empty_count} 条)",
+                        "出现次数": int(empty_count),
+                    })
+        if join_field in report_df.columns and leave_field in report_df.columns:
+            join_s = _series_to_dates(report_df[join_field])
+            leave_s = _series_to_dates(report_df[leave_field])
+            for idx in report_df.index:
+                jd = join_s.iloc[idx] if idx < len(join_s) else None
+                ld = leave_s.iloc[idx] if idx < len(leave_s) else None
+                if jd is not None and ld is not None and not pd.isna(jd) and not pd.isna(ld):
+                    if ld < jd:
+                        key_col = config.unique_fields[0] if config.unique_fields else None
+                        key_val = str(report_df.iloc[idx].get(key_col, f"行{idx+1}")) if key_col and key_col in report_df.columns else f"行{idx+1}"
+                        anomaly_rows.append({
+                            "异常类型": "离职早于入职",
+                            "字段": f"{join_field}/{leave_field}",
+                            "异常值": f"入职={jd.strftime('%Y-%m-%d')} 离职={ld.strftime('%Y-%m-%d')} ({key_val})",
+                            "出现次数": 1,
+                        })
+        if anomaly_rows:
+            master_sheets["异常数据汇总"] = pd.DataFrame(anomaly_rows)
+        else:
+            master_sheets["异常数据汇总"] = pd.DataFrame([{"说明": "未发现异常数据"}])
+
         _write_multi_sheet_excel(master_sheets, master_path)
         click.echo(f"\n💾 集团总册: {click.format_filename(master_path)}")
         click.echo(f"   分册 {len(branch_values)} 份 + 集团总册 1 份，共 {len(all_outputs)} 个文件")
-
-        if _filter_output_pre:
-            pre_existing_all.extend(_filter_output_pre)
-        pre_existing_all.extend(_existing_paths(all_outputs))
 
         log_operation(
             ctx.base_dir, "report", all_outputs,
@@ -845,6 +939,7 @@ def report_command(ctx, input_path: str, output: str, filters: List[str],
              "per_branch": True, "branch_field": branch_field, "branch_dir": branch_dir_abs},
             pre_existing_files=pre_existing_all,
             operator=ctx.operator, batch_id=ctx.batch_id, input_files=[input_abs],
+            prepared=prepared,
         )
         return
 
@@ -884,13 +979,28 @@ def report_command(ctx, input_path: str, output: str, filters: List[str],
     if excel_output:
         all_outputs.append(excel_output)
         pre_existing_all.extend(_existing_paths([excel_output]))
+    elif output:
+        out_abs = os.path.abspath(output)
+        all_outputs.append(out_abs)
+        pre_existing_all.extend(_existing_paths([out_abs]))
+
+    if _filter_output_pre:
+        pre_existing_all.extend(_filter_output_pre)
+
+    non_filter_outputs = [o for o in all_outputs if o != _filter_output_path]
+    prepared = prepare_backup(ctx.base_dir, non_filter_outputs, pre_existing_files=pre_existing_all)
+    if _filter_prepared:
+        prepared["recorded_files"] = _filter_prepared["recorded_files"] + prepared["recorded_files"]
+        if _filter_prepared["timestamp"] < prepared["timestamp"]:
+            prepared["timestamp"] = _filter_prepared["timestamp"]
+            prepared["snapshot_dir"] = _filter_prepared["snapshot_dir"]
+
+    if excel_output:
         _write_multi_sheet_excel(stats_sheets, excel_output)
         click.echo(f"\n💾 多 Sheet 统计报告: {click.format_filename(excel_output)}")
         click.echo(f"   Sheet 列表: {', '.join(stats_sheets.keys())}")
     elif output:
         out_abs = os.path.abspath(output)
-        all_outputs.append(out_abs)
-        pre_existing_all.extend(_existing_paths([out_abs]))
         with open(out_abs, "w", encoding="utf-8") as f:
             f.write("HR 统计摘要\n")
             f.write("=" * 50 + "\n")
@@ -902,20 +1012,45 @@ def report_command(ctx, input_path: str, output: str, filters: List[str],
                     f.write(f"  {field} {op} {value}\n")
         click.echo(f"\n💾 摘要文本已保存: {click.format_filename(out_abs)}")
 
-    if _filter_output_pre:
-        pre_existing_all.extend(_filter_output_pre)
-
     log_operation(
         ctx.base_dir, "report", all_outputs,
         {"input": input_abs, "filters": filters, "group_by": group_by, "output": output, "export_stats": export_stats},
         pre_existing_files=pre_existing_all,
         operator=ctx.operator, batch_id=ctx.batch_id, input_files=[input_abs],
+        prepared=prepared,
     )
 
 
 # ============================================================
 # rollback 命令
 # ============================================================
+def _display_rollback_preview(info: Dict[str, Any]) -> None:
+    op = info["operation"]
+    click.echo(f"📋 将回滚操作: {op['timestamp']}  {op['command']}  操作人={op.get('operator', '')}  批次={op.get('batch_id', '')}")
+
+    if info.get("to_restore"):
+        click.echo(f"\n   ✅ 将恢复 {len(info['to_restore'])} 个文件（回到覆盖/删除前版本）:")
+        for r in info["to_restore"]:
+            label = " (原被删除)" if r.get("was_deleted") else " (原被覆盖)"
+            click.echo(f"     - {click.format_filename(r['path'])}{label}")
+
+    if info.get("to_delete"):
+        click.echo(f"\n   🗑️  将删除 {len(info['to_delete'])} 个文件/目录（操作新建的产物）:")
+        for d in info["to_delete"]:
+            kind = "目录" if d.get("is_dir") else "文件"
+            click.echo(f"     - {click.format_filename(d['path'])} [{kind}]")
+
+    if info.get("to_skip"):
+        click.echo(f"\n   ⏭️  将跳过 {len(info['to_skip'])} 项:")
+        for s in info["to_skip"]:
+            click.echo(f"     - {s['path']} ({s.get('reason', '')})")
+
+    restore_count = len(info.get("to_restore", []))
+    delete_count = len(info.get("to_delete", []))
+    skip_count = len(info.get("to_skip", []))
+    click.echo(f"\n   📊 合计: 恢复 {restore_count}  删除 {delete_count}  跳过 {skip_count}")
+
+
 def rollback_command(ctx, steps: int, list_ops: bool, clear: int,
                      preview: bool = False, audit_export: Optional[str] = None,
                      batch_id: Optional[str] = None, confirm: bool = True):
@@ -950,20 +1085,7 @@ def rollback_command(ctx, steps: int, list_ops: bool, clear: int,
         if not info.get("has_operation"):
             click.echo("ℹ️  没有可回滚的操作记录")
             return
-        op = info["operation"]
-        click.echo(f"📋 将回滚操作: {op['timestamp']}  {op['command']}  操作人={op.get('operator', '')}  批次={op.get('batch_id', '')}")
-        if info.get("to_restore"):
-            click.echo(f"   ✅ 将恢复 {len(info['to_restore'])} 个文件（覆盖/删除前版本）:")
-            for r in info["to_restore"]:
-                click.echo(f"     - {click.format_filename(r['path'])}")
-        if info.get("to_delete"):
-            click.echo(f"   🗑️  将删除 {len(info['to_delete'])} 个文件（操作新建的产物）:")
-            for d in info["to_delete"]:
-                click.echo(f"     - {click.format_filename(d['path'])}")
-        if info.get("to_skip"):
-            click.echo(f"   ⏭️  将跳过 {len(info['to_skip'])} 项:")
-            for s in info["to_skip"]:
-                click.echo(f"     - {s['path']} ({s.get('reason', '')})")
+        _display_rollback_preview(info)
         return
 
     if confirm:
@@ -971,14 +1093,7 @@ def rollback_command(ctx, steps: int, list_ops: bool, clear: int,
         if not info.get("has_operation"):
             click.echo("ℹ️  没有可回滚的操作记录")
             return
-        op = info["operation"]
-        click.echo(f"📋 将回滚操作: {op['timestamp']}  {op['command']}  操作人={op.get('operator', '')}  批次={op.get('batch_id', '')}")
-        if info.get("to_restore"):
-            click.echo(f"   ✅ 将恢复 {len(info['to_restore'])} 个文件")
-        if info.get("to_delete"):
-            click.echo(f"   🗑️  将删除 {len(info['to_delete'])} 个文件")
-        if info.get("to_skip"):
-            click.echo(f"   ⏭️  将跳过 {len(info['to_skip'])} 项")
+        _display_rollback_preview(info)
         if not click.confirm("\n确认执行回滚？", default=False):
             click.echo("已取消。")
             return
@@ -988,25 +1103,33 @@ def rollback_command(ctx, steps: int, list_ops: bool, clear: int,
     try:
         result = rollback_last(ctx.base_dir)
         op = result["operation"]
-        click.echo(f"↩️  已回滚操作: {op['timestamp']}  {op['command']}")
+        click.echo(f"\n↩️  回滚执行结果: {op['timestamp']}  {op['command']}  操作人={op.get('operator', '')}  批次={op.get('batch_id', '')}")
+
         if result["restored"]:
-            click.echo(f"   ✅ 已恢复 {len(result['restored'])} 个文件（覆盖/删除前版本）:")
-            for r in result["restored"]:
-                click.echo(f"     - {click.format_filename(r)}")
+            click.echo(f"\n   ✅ 已恢复 {len(result['restored'])} 个文件:")
+            for rd in result.get("restored_digests", []):
+                digest_info = f"  恢复后摘要={rd.get('rollback_digest', '?')}" if rd.get("rollback_digest") else ""
+                click.echo(f"     - {click.format_filename(rd['path'])}{digest_info}")
+
         if result["deleted"]:
-            click.echo(f"   🗑️  已删除 {len(result['deleted'])} 个文件（操作新建的产物）:")
+            click.echo(f"\n   🗑️  已删除 {len(result['deleted'])} 个文件/目录（操作新建的产物）:")
             for d in result["deleted"]:
                 click.echo(f"     - {click.format_filename(d)}")
+
         if result["skipped"]:
-            click.echo(f"   ⏭️  跳过 {len(result['skipped'])} 项:")
+            click.echo(f"\n   ⏭️  跳过 {len(result['skipped'])} 项:")
             for s in result["skipped"]:
                 click.echo(f"     - {s}")
+
         if result["errors"]:
-            click.echo(f"   ❌ 出现 {len(result['errors'])} 个错误:")
+            click.echo(f"\n   ❌ 出现 {len(result['errors'])} 个错误:")
             for e in result["errors"]:
                 click.echo(f"     - {e}")
+
         if not any([result["restored"], result["deleted"], result["skipped"], result["errors"]]):
             click.echo("   没有可处理的文件变更。")
+
+        click.echo(f"\n   📊 回滚结果合计: 恢复 {len(result['restored'])}  删除 {len(result['deleted'])}  跳过 {len(result['skipped'])}  错误 {len(result['errors'])}")
     except ValueError as e:
         click.echo(f"❌ {e}", err=True)
         sys.exit(1)
@@ -1201,7 +1324,8 @@ def _run_batch_step(ctx, step: Dict[str, Any], plan_dir: str) -> Dict[str, Any]:
 
 
 def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
-                  dry_run: bool = False, resume_from: Optional[str] = None):
+                  dry_run: bool = False, resume_from: Optional[str] = None,
+                  resume_auto: bool = False):
     plan_abs = os.path.abspath(plan_path)
     plan_dir = os.path.dirname(plan_abs)
     click.echo(f"📋 读取批处理任务: {click.format_filename(plan_abs)}")
@@ -1234,6 +1358,22 @@ def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
 
     if not ctx.batch_id:
         ctx.batch_id = generate_batch_id()
+
+    checkpoint = None
+    if resume_auto:
+        checkpoint = load_checkpoint(ctx.base_dir, ctx.batch_id)
+        if checkpoint:
+            last_step = checkpoint.get("last_completed_step", -1)
+            last_name = checkpoint.get("last_step_name", "")
+            last_status = checkpoint.get("last_step_status", "")
+            click.echo(f"📍 发现断点: 批次 {ctx.batch_id} 上次执行到步骤 {last_step+1}({last_name})，状态={last_status}")
+            if last_status in ("success", "warnings"):
+                resume_from = str(last_step + 2)
+            else:
+                resume_from = str(last_step + 1)
+                click.echo(f"   上次步骤未成功，将从该步骤重新执行")
+        else:
+            click.echo(f"ℹ️  未找到批次 {ctx.batch_id} 的断点记录，从头开始执行")
 
     if dry_run:
         click.echo("🔍 DRY RUN 模式 - 仅预览，不实际执行\n")
@@ -1272,6 +1412,7 @@ def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
         return
 
     start_idx = 0
+    is_retry_step = False
     if resume_from:
         try:
             start_idx = int(resume_from) - 1
@@ -1285,14 +1426,18 @@ def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
                 sys.exit(1)
         if start_idx < 0:
             start_idx = 0
-        click.echo(f"⏩ 从步骤 {start_idx + 1} ({steps[start_idx]['name']}) 开始恢复执行\n")
+        if checkpoint and checkpoint.get("last_step_status") not in ("success", "warnings"):
+            is_retry_step = True
+            click.echo(f"⏩ 从步骤 {start_idx + 1} ({steps[start_idx]['name']}) 失败重跑\n")
+        else:
+            click.echo(f"⏩ 从步骤 {start_idx + 1} ({steps[start_idx]['name']}) 继续执行\n")
 
     import time
     batch_start = time.time()
     results: List[Dict[str, Any]] = []
     for i, step in enumerate(steps):
         if i < start_idx:
-            click.echo(f"⏭️  [{i+1}/{len(steps)}] {step['name']}  ({step['command']}) - 跳过(resume)")
+            click.echo(f"⏭️  [{i+1}/{len(steps)}] {step['name']}  ({step['command']}) - 跳过(已执行)")
             results.append({
                 "name": step["name"],
                 "command": step["command"],
@@ -1306,17 +1451,32 @@ def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
             })
             continue
 
-        click.echo(f"▶️  [{i+1}/{len(steps)}] {step['name']}  ({step['command']})")
+        if i == start_idx and is_retry_step:
+            step_status_label = "failed_retried"
+        elif i == start_idx and resume_from:
+            step_status_label = "continued"
+        else:
+            step_status_label = ""
+
+        click.echo(f"▶️  [{i+1}/{len(steps)}] {step['name']}  ({step['command']})"
+                   + (f" [{step_status_label}]" if step_status_label else ""))
         result = _run_batch_step(ctx, step, plan_dir)
+        if step_status_label:
+            result["status_label"] = step_status_label
         results.append(result)
         icon = {"success": "✅", "warnings": "⚠️ ", "failed": "❌", "failed_exit": "❌"}.get(result["status"], "?")
-        click.echo(f"   {icon} {result['status']}  耗时 {result['duration_sec']}s  退出码 {result['exit_code']}")
+        label_tag = f" [{step_status_label}]" if step_status_label else ""
+        click.echo(f"   {icon} {result['status']}{label_tag}  耗时 {result['duration_sec']}s  退出码 {result['exit_code']}")
         if result["error"]:
             click.echo(f"   ℹ️  {result['error']}")
         if result["output_files"]:
             click.echo(f"   📄 输出: {', '.join(os.path.basename(f) for f in result['output_files'][:5])}"
                        + (" ..." if len(result["output_files"]) > 5 else ""))
         click.echo()
+
+        save_checkpoint(ctx.base_dir, ctx.batch_id, plan_abs, len(steps), i,
+                        step["name"], result["status"])
+
         if stop_on_error and result["status"] in ("failed", "failed_exit"):
             click.echo(f"🛑 步骤失败，按 stop_on_error=true 停止剩余 {len(steps)-i-1} 步")
             break
@@ -1326,10 +1486,16 @@ def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
     warnings = sum(1 for r in results if r["status"] == "warnings")
     failed = sum(1 for r in results if r["status"] in ("failed", "failed_exit"))
     skipped_resume = sum(1 for r in results if r["status"] == "skipped(resume)")
+    continued = sum(1 for r in results if r.get("status_label") == "continued")
+    failed_retried = sum(1 for r in results if r.get("status_label") == "failed_retried")
+
+    if failed == 0 and failed_retried == 0:
+        clear_checkpoint(ctx.base_dir, ctx.batch_id)
 
     click.echo("=" * 60)
     click.echo(f"🏁 批处理完成: {batch_name}")
-    click.echo(f"   总耗时 {batch_duration}s  成功 {success}  告警 {warnings}  失败 {failed}  跳过(resume) {skipped_resume}")
+    click.echo(f"   总耗时 {batch_duration}s  成功 {success}  告警 {warnings}  失败 {failed}"
+               f"  跳过(resume) {skipped_resume}  继续(continued) {continued}  失败重跑(failed_retried) {failed_retried}")
     click.echo("=" * 60)
 
     report_abs = os.path.abspath(report_path) if report_path else os.path.join(
@@ -1345,6 +1511,8 @@ def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
         {"项目": "总步数", "值": len(steps)},
         {"项目": "已执行", "值": len(results) - skipped_resume},
         {"项目": "跳过(resume)", "值": skipped_resume},
+        {"项目": "继续(continued)", "值": continued},
+        {"项目": "失败重跑(failed_retried)", "值": failed_retried},
         {"项目": "成功", "值": success},
         {"项目": "告警（有错误但继续）", "值": warnings},
         {"项目": "失败", "值": failed},
@@ -1356,6 +1524,7 @@ def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
         "步骤名称": r["name"],
         "命令": r["command"],
         "状态": r["status"],
+        "状态标签": r.get("status_label", ""),
         "退出码": r["exit_code"],
         "耗时(秒)": r["duration_sec"],
         "输出文件": " | ".join(r["output_files"]),
@@ -1371,6 +1540,7 @@ def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
 
     sheets = {"0-批处理摘要": summary_df, "1-步骤明细": steps_df, "2-所有输出文件": outputs_df}
     pre_existing = _existing_paths([report_abs])
+    prepared = prepare_backup(ctx.base_dir, [report_abs], pre_existing_files=pre_existing)
     if report_abs.lower().endswith((".xlsx", ".xls")):
         _write_multi_sheet_excel(sheets, report_abs)
         click.echo(f"📊 批处理报告（多 Sheet Excel）: {click.format_filename(report_abs)}")
@@ -1389,9 +1559,11 @@ def batch_command(ctx, plan_path: str, report_path: str, stop_on_error: bool,
         ctx.base_dir, "batch", [report_abs],
         {"plan": plan_abs, "report": report_abs, "steps": len(results),
          "success": success, "failed": failed, "duration": batch_duration,
-         "batch_id": ctx.batch_id, "skipped_resume": skipped_resume},
+         "batch_id": ctx.batch_id, "skipped_resume": skipped_resume,
+         "continued": continued, "failed_retried": failed_retried},
         pre_existing_files=pre_existing,
         operator=ctx.operator, batch_id=ctx.batch_id, input_files=[plan_abs],
+        prepared=prepared,
     )
 
     if failed > 0:

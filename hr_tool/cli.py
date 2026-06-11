@@ -143,9 +143,10 @@ def rollback_cmd(ctx: HRContext, steps: int, list_ops: bool, clear: int,
 @click.option("--stop-on-error", is_flag=True, help="任一步失败立即停止，默认继续后续步骤")
 @click.option("--dry-run", is_flag=True, help="预览每步将读写哪些文件、哪些会覆盖，不实际执行")
 @click.option("--resume-from", type=str, default=None, help="从指定步骤继续执行（步骤名或序号如 3）")
+@click.option("--resume", "resume_auto", is_flag=True, help="自动从上次断点继续执行（需配合 --batch-id）")
 @pass_hr
-def batch_cmd(ctx: HRContext, plan: str, output: str, stop_on_error: bool, dry_run: bool, resume_from: str):
-    cmd.batch_command(ctx, plan, output, stop_on_error, dry_run=dry_run, resume_from=resume_from)
+def batch_cmd(ctx: HRContext, plan: str, output: str, stop_on_error: bool, dry_run: bool, resume_from: str, resume_auto: bool):
+    cmd.batch_command(ctx, plan, output, stop_on_error, dry_run=dry_run, resume_from=resume_from, resume_auto=resume_auto)
 
 
 if __name__ == "__main__":
