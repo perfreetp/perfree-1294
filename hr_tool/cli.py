@@ -120,5 +120,14 @@ def rollback_cmd(ctx: HRContext, steps: int, list_ops: bool, clear: int):
     cmd.rollback_command(ctx, steps, list_ops, clear)
 
 
+@main.command("batch", help="按 YAML/JSON 任务清单串行执行多个命令，生成批处理报告")
+@click.argument("plan", type=click.Path(exists=True, dir_okay=False))
+@click.option("-o", "--output", "output", type=click.Path(), default=None, help="批处理报告输出路径（默认同目录 batch_report_*.xlsx）")
+@click.option("--stop-on-error", is_flag=True, help="任一步失败立即停止，默认继续后续步骤")
+@pass_hr
+def batch_cmd(ctx: HRContext, plan: str, output: str, stop_on_error: bool):
+    cmd.batch_command(ctx, plan, output, stop_on_error)
+
+
 if __name__ == "__main__":
     main()

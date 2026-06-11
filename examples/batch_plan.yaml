@@ -1,0 +1,65 @@
+name: 季度分公司人事资料处理
+description: >
+  一次性处理上海、北京、深圳三家分公司花名册：
+  1) 校验每一份的身份证、手机号、必填项
+  2) 合并为集团花名册
+  3) 与上季度 Q1 对比变化
+  4) 脱敏敏感字段生成对外版本
+  5) 输出统计报告
+options:
+  stop_on_error: false
+
+steps:
+  - name: 校验上海分公司
+    command: check
+    args:
+      input: 上海分公司_花名册.xlsx
+      output: 校验结果_上海.xlsx
+
+  - name: 校验北京分公司
+    command: check
+    args:
+      input: 北京分公司_花名册.xlsx
+      output: 校验结果_北京.xlsx
+
+  - name: 校验深圳分公司
+    command: check
+    args:
+      input: 深圳分公司_花名册.csv
+      output: 校验结果_深圳.xlsx
+
+  - name: 合并三家花名册
+    command: merge
+    args:
+      inputs:
+        - 上海分公司_花名册.xlsx
+        - 北京分公司_花名册.xlsx
+        - 深圳分公司_花名册.csv
+      output: 集团花名册_Q2.xlsx
+      source_col: 来源分公司
+
+  - name: 与Q1对比
+    command: compare
+    args:
+      old: Q1_花名册.xlsx
+      new: 集团花名册_Q2.xlsx
+      output: Q1_Q2对比结果.xlsx
+      key_field: 员工编号
+      dept_field: 部门
+      pos_field: 岗位
+
+  - name: 生成脱敏版本
+    command: mask
+    args:
+      input: 集团花名册_Q2.xlsx
+      output: 集团花名册_Q2_脱敏.xlsx
+
+  - name: 输出集团统计报告
+    command: report
+    args:
+      input: 集团花名册_Q2.xlsx
+      filters:
+        - "分公司=上海总部"
+      group_by: 部门,职级
+      export_stats: 集团统计_Q2.xlsx
+      filter_output: 上海总部_Q2明细.xlsx
